@@ -15,8 +15,8 @@ firebase.initializeApp({
 // Firebase mostra da solo le notifiche e, al tocco, apre l'app
 firebase.messaging();
 
-const CACHE = 'agenda-team-v2';
-const FILES = ['./', './index.html', './manifest.json', './icon.svg'];
+const CACHE = 'agenda-team-v3';
+const FILES = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));

@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Agenda Team</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -180,6 +182,11 @@ input[type=date],input[type=time]{color-scheme:dark}
       <span><b style="display:block">Attiva le notifiche</b><small style="color:var(--mut)">Tocca qui per ricevere gli avvisi anche ad app chiusa</small></span>
     </button>
 
+    <button class="glass hidden" id="installBanner" style="width:100%;margin-top:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;text-align:left;border-color:rgba(56,189,248,.45);background:rgba(56,189,248,.1)">
+      <span style="font-size:26px">📲</span>
+      <span><b style="display:block">Installa l'app sul telefono</b><small style="color:var(--mut)">Tocca qui: avrai l'icona Agenda Team nella schermata Home</small></span>
+    </button>
+
     <section class="status glass" id="status"></section>
 
     <div class="week-head">
@@ -268,6 +275,7 @@ input[type=date],input[type=time]{color-scheme:dark}
     <button class="btn" id="bSetSave">Salva impostazioni</button>
     <button class="btn sec" id="bTest">🔔 Invia notifica di prova al collega</button>
     <button class="btn sec" id="bTestMe">📲 Invia notifica di prova a me</button>
+    <button class="btn sec" id="bInstall">⬇️ Installa l'app sul telefono</button>
     <button class="btn sec" id="bOut">Esci</button>
   </div>
   <p class="hint" id="modeInfo" style="text-align:center;margin-top:14px"></p>
@@ -484,6 +492,30 @@ function avvisoInApp(ev) {
   toast('🔔 ' + txt);
   if ('Notification' in window && Notification.permission === 'granted') {
     try { new Notification('Agenda Team', { body: txt, icon: 'icon.svg' }); } catch (e) {}
+  }
+}
+
+/* =========================================================
+   INSTALLAZIONE SUL TELEFONO
+   ========================================================= */
+let promptInstall = null;
+const installata = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); promptInstall = e; aggiornaInstall(); });
+window.addEventListener('appinstalled', () => { promptInstall = null; aggiornaInstall(); toast('✅ App installata! La trovi nella schermata Home'); });
+function aggiornaInstall() {
+  const b = $('#installBanner'); if (b) b.classList.toggle('hidden', installata() || !promptInstall);
+  const s = $('#bInstall'); if (s) s.classList.toggle('hidden', installata());
+}
+async function installa() {
+  if (installata()) return toast('L\'app è già installata');
+  if (promptInstall) {
+    promptInstall.prompt();
+    await promptInstall.userChoice;
+    promptInstall = null; aggiornaInstall();
+  } else if (/iphone|ipad/i.test(navigator.userAgent)) {
+    toast('Tocca Condividi ⬆️ in basso e poi "Aggiungi alla schermata Home"');
+  } else {
+    toast('Apri il menu ⋮ di Chrome in alto a destra e scegli "Installa app" o "Aggiungi a schermata Home"');
   }
 }
 
@@ -755,6 +787,9 @@ async function avvio() {
   };
   $('#bAttiva').onclick = async () => { await attivaNotifiche(false); apriImpostazioni(); };
   $('#notifBanner').onclick = () => attivaNotifiche(false);
+  $('#installBanner').onclick = installa;
+  $('#bInstall').onclick = installa;
+  aggiornaInstall();
   $('#bOut').onclick = () => {
     closeSheets();
     if (MODE === 'firebase') firebase.auth().signOut();
